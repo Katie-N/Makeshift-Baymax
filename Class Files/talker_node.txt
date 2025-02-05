@@ -1,0 +1,59 @@
+import rclpy
+from rclpy.node import Node
+
+from std_msgs.msg import String
+
+class Talker(Node):
+	def __init__(self):
+		super().__init__('Talker')
+		
+		# Parameter declaration
+		# param named 'msg_filter' with default value 'none'
+		self.declare_parameter('msg_filter', 'none') 
+        
+		# Create publisher to 'talk_listen_topic' with msg type String
+		self.publisher = self.create_publisher(String, 'talk_listen_topic', 10)
+		timer_period = 1  # seconds
+		
+		# ROS 2 timer function: calls callback after recurring timer period
+		self.timer = self.create_timer(timer_period, self.timer_callback)
+		self.count = 0
+		
+	def timer_callback(self):
+		msg = String()
+		msg.data = f'EECS 690 says: {self.count}'
+
+		# -------- Start Parameter implementation --------
+		msg_filter = self.get_parameter('msg_filter').get_parameter_value().string_value
+        #can use any data type (not just string)
+        
+		if msg_filter == 'none':
+			self.publisher.publish(msg)
+			self.get_logger().info(f'Publishing: "{msg.data}"')
+
+		elif msg_filter == 'even':
+			if self.count % 2 == 0:
+				self.publisher.publish(msg)
+				self.get_logger().info(f'Publishing: "{msg.data}"')
+
+		elif msg_filter == 'odd':
+			if self.count % 2 ==1:
+				self.publisher.publish(msg)
+				self.get_logger().info(f'Publishing: "{msg.data}"')
+		# -------- End Parameter implementation --------
+
+		self.count += 1
+		
+def main(args=None):
+	rclpy.init(args=args)
+
+	talker_node = Talker()
+
+	rclpy.spin(talker_node)
+
+	talker_node.destroy_node()
+	rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
