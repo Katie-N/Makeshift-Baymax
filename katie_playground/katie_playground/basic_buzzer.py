@@ -23,16 +23,23 @@ class BasicBuzzer(Node):
             time.sleep(0.1)  # Check every 100ms
 
         buzzer_msg = BuzzerState()
-        buzzer_msg.on_time = 0.25
         buzzer_msg.off_time = 0.01
+        buzzer_msg.on_time = 0.25
         buzzer_msg.repeat = 1
 
-        for i in range(len(songs.twinkleTwinkle["notes"])):
-            note = round(songs.twinkleTwinkle["notes"][i])
+        # Choose the song here. No other lines need to be changed
+        song = songs.immortals
+
+        for i in range(len(song.notes)):
+            # Setup the next note to sing
+            note = round(song.notes[i])
             buzzer_msg.freq = note
-            buzzer_msg.on_time = songs.twinkleTwinkle["noteDurations"][i]
+            buzzer_msg.on_time = song.noteDurations[i]
+            
+            # Sing the note
             self.buzzer_pub.publish(buzzer_msg)
-            time.sleep(songs.twinkleTwinkle["noteDurations"][i] + 0.05)
+            # Sleep so that the next iteration does not run until the current note has finished
+            time.sleep(song.noteDurations[i] + song.timeBetween)
 
 def main(args=None):
     rclpy.init(args=args)
