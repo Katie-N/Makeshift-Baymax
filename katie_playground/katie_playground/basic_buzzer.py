@@ -13,7 +13,7 @@ import songs
 class BasicBuzzer(Node):
     def __init__(self, name):
         super().__init__(name)
-
+        print("basic buzzer")
         self.buzzer_pub = self.create_publisher(BuzzerState, '/ros_robot_controller/set_buzzer', 1)
     
         # Use this to make sure code does not start executing before subscribers are listening
@@ -28,7 +28,7 @@ class BasicBuzzer(Node):
         buzzer_msg.repeat = 1
 
         # Choose the song here. No other lines need to be changed
-        song = songs.immortals
+        song = songs.twinkleTwinkle
 
         for i in range(len(song.notes)):
             # Setup the next note to sing
