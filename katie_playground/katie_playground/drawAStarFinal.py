@@ -13,10 +13,11 @@ from ros_robot_controller_msgs.msg import BuzzerState, SetPWMServoState, PWMServ
 import time
 
 class Star(Node):
-    def __init__(self, name):
+    def __init__(self, name, speed):
         super().__init__(name)
 
         self.min_value = 0.1
+        self.speed = speed
         self.declare_parameter('max_linear', 0.7)
         self.declare_parameter('max_angular', 3.0)
         self.declare_parameter('disable_servo_control', True)
@@ -40,9 +41,14 @@ class Star(Node):
         self.stop_robot()
 
     def full_glam(self, x):
-        self.starPath(0.5)
-        self.starPath(1)
-        self.starPath(1.5)
+        if (self.speed == 1):
+            self.starPath(0.5)
+            self.starPath(1)
+            self.starPath(1.5)
+        else:
+            self.starPath(0.25)
+            self.starPath(5)
+            self.starPath(1)
 
     def starPath(self, duration):
         # The star has 5 line movements.
@@ -77,10 +83,10 @@ class Star(Node):
         msg.angular.z = 0.0
         self.mecanum_pub.publish(msg)
 
-def main():
-    myStar = Star('makeAStar')
+def main(speed):
+    myStar = Star('makeAStar', speed)
     rclpy.spin_once(myStar)
 
 if __name__ == "__main__":
     rclpy.init()
-    main()
+    main(1)

@@ -5,9 +5,9 @@ import rclpy
 from rclpy.node import Node
 
 # Thread that handles singing Twinkle Twinkle
-thread1 = threading.Thread(target=basic_buzzer.main)
+thread1 = threading.Thread(target=basic_buzzer.main, args=("TwinkleTwinkleSpedUp")) # Speed up
 # Thread that handles drawing the star
-thread2 = threading.Thread(target=drawAStar.main)
+thread2 = threading.Thread(target=drawAStar.main, args=(2)) # Speed up
 
 thread1.start()
 thread2.start()

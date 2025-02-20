@@ -1,11 +1,13 @@
 import basic_buzzer
 import drawAStar
 import threading
+import rclpy
+from rclpy.node import Node
 
 # Thread that handles singing Twinkle Twinkle
-thread1 = threading.Thread(target=basic_buzzer.main)
+thread1 = threading.Thread(target=basic_buzzer.main, args=("TwinkleTwinkle")) # Speed is Regular
 # Thread that handles drawing the star
-thread2 = threading.Thread(target=drawAStar.main)
+thread2 = threading.Thread(target=drawAStar.main, args=(1)) # Speed is Regular
 
 thread1.start()
 thread2.start()

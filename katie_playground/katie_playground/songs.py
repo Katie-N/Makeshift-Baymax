@@ -51,6 +51,14 @@ twinkleTwinkle = Song("Twinkle Twinkle Little Star", 200, [C, C, G, G, A, A, G,
             F, F, E, E, D, D, C], 0.25) 
 twinkleTwinkle.setNoteDuration(([1*twinkleTwinkle.beat] * 6 + [2*twinkleTwinkle.beat]) * 6)
 
+twinkleTwinkleSpedUp = Song("Twinkle Twinkle Little Star", 400, [C, C, G, G, A, A, G, 
+            F, F, E, E, D, D, C,
+            G, G, F, F, E, E, D,
+            G, G, F, F, E, E, D,
+            C, C, G, G, A, A, G, 
+            F, F, E, E, D, D, C], 0.125) 
+twinkleTwinkleSpedUp.setNoteDuration(([1*twinkleTwinkleSpedUp.beat] * 6 + [2*twinkleTwinkleSpedUp.beat]) * 6)
+
 immortals = Song("Immortals", 400, 
             [Cs, A, A, A, A, A, Fs, Fs,
              A, A, Fs, Fs,

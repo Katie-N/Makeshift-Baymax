@@ -11,9 +11,10 @@ from ros_robot_controller_msgs.msg import BuzzerState
 import songs
 
 class BasicBuzzer(Node):
-    def __init__(self, name):
+    def __init__(self, name, song):
         super().__init__(name)
         print("basic buzzer")
+        self.song = song
         self.buzzer_pub = self.create_publisher(BuzzerState, '/ros_robot_controller/set_buzzer', 1)
     
         # Use this to make sure code does not start executing before subscribers are listening
@@ -28,7 +29,10 @@ class BasicBuzzer(Node):
         buzzer_msg.repeat = 1
 
         # Choose the song here. No other lines need to be changed
-        song = songs.twinkleTwinkle
+        if self.song == "TwinkleTwinkleSpedUp":
+            song = songs.twinkleTwinkleSpedUp
+        else:
+            song = songs.twinkleTwinkle
 
         for i in range(len(song.notes)):
             # Setup the next note to sing
@@ -41,11 +45,11 @@ class BasicBuzzer(Node):
             # Sleep so that the next iteration does not run until the current note has finished
             time.sleep(song.noteDurations[i] + song.timeBetween)
 
-def main(args=None):
+def main(song, args=None):
     rclpy.init(args=args)
-    BasicBuzzerNode = BasicBuzzer('Basic_Buzzer')
+    BasicBuzzerNode = BasicBuzzer('Basic_Buzzer', song)
     BasicBuzzerNode.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
-    main()
+    main("TwinkleTwinkle")
