@@ -32,7 +32,7 @@ class Charge(Node):
         self.target_x = None
         self.target_y = None
 
-        self.timer = self.create_timer(0.1, self.control_loop)  # 10 Hz control loop
+        # self.timer = self.create_timer(0.1, self.control_loop)  # 10 Hz control loop
 
     # helper function to send movement instructions to wheels
     def axes_callback(self, axes):
