@@ -9,7 +9,7 @@ class LidarProcessor(Node):
         #subscribe to lidar scan topic
         self.subscription = self.create_subscription(
             LaserScan,
-            '/scan', #topic name for lidar data
+            '/scan_raw', #topic name for lidar data
             self.lidar_callback, #callback for when new data arrives
             10) #message queue size
         

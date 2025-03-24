@@ -17,7 +17,7 @@ class LidarTracker(Node):
         #subscribe to the lidar scan topic to receive distance measurements
         self.subscription = self.create_subscription(
             LaserScan,
-            '/scan',  #topic where lidar sensor publishes readings
+            '/scan_raw',  #topic where lidar sensor publishes readings
             self.lidar_callback,
             10)  #queue size for message buffering
         

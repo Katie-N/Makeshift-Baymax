@@ -10,7 +10,7 @@ class LidarShapeRecognizer(Node):
         #subscribe to the lidar scan topic
         self.subscription = self.create_subscription(
             LaserScan,
-            '/scan',  #lidar topic
+            '/scan_raw',  #lidar topic
             self.lidar_callback,
             10  #message queue size
         )
@@ -49,6 +49,7 @@ class LidarShapeRecognizer(Node):
         #log detected walls and opponent position for debugging
         self.get_logger().info(f"Walls: {walls}")
         self.get_logger().info(f"Opponent: {opponent}")
+        self.get_logger().info(f"{ranges} meters at {angles} degrees")
         
         #update the last known opponent position
         self.opponent = opponent if opponent is not None else self.opponent
@@ -135,7 +136,7 @@ def main(args=None):
     Main function to initialize and run the ROS2 node.
     """
     rclpy.init()
-    node = LidarProcessor()
+    node = LidarShapeRecognizer()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

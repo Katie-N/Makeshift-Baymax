@@ -1,8 +1,6 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Float32MultiArray
-import numpy as np
 
 class WallTracker(Node):
     def __init__(self):
@@ -14,6 +12,7 @@ class WallTracker(Node):
             '/scan_raw',  #topic for LiDAR sensor readings
             self.lidar_callback,
             10)
+        print("subscribed to lidar")
         """
         for if we decide to implement the feature where it moves away from
         wall if within designated distance
@@ -21,32 +20,26 @@ class WallTracker(Node):
         #desired distance from walls (meters)
         self.target_distance = 0.5
 
-        self.wall_distances = self.create_publisher(Float32MultiArray, '/wall_distances', 10)
-        
         #Christina added these to use in defence.py
         self.left_dist = float('inf')
         self.right_dist = float('inf')
         self.front_dist = float('inf')
-        self.back_dist = float('inf')
 
     def lidar_callback(self, msg):
         """
         callback function to process lidar data.
         calculates distances to the left, right, and front as the robot moves.
         """
-        distances = np.array(msg.ranges)
+        print("I heard" + str(msg))
+        
         #extract minimum distance from specific angle ranges
-        self.left_dist = float(min(distances[50:130]))   #left side (60° to 120°)
-        self.right_dist = float(min(distances[250:310])) #right side (240° to 300°)
-        self.front_dist = float(min(distances[0:50] + distances[310:360]))  #front (0°-20° & 340°-360°)
-        self.back_dist = float(min(distances[130:250])) # back (120 to 240)
-        
-        msg = Float32MultiArray()
-        msg.data = [self.front_dist, self.right_dist, self.back_dist, self.left_dist]
-        self.wall_distances.publish(msg)
-        
+        self.left_dist = min(msg.ranges[60:120])   #left side (60° to 120°)
+        self.right_dist = min(msg.ranges[240:300]) #right side (240° to 300°)
+        self.front_dist = min(msg.ranges[0:20] + msg.ranges[340:360])  #front (0°-20° & 340°-360°)
+
         #logging detected distances for debugging and implementation
-        self.get_logger().info(f"Left Distance: {self.left_dist:.2f} m, Right Distance: {self.right_dist:.2f} m, Front Distance: {self.front_dist:.2f} m, Back Distance: {self.back_dist:.2f} m")
+        print(f"Left Distance: {self.left_dist:.2f}m, Right Distance: {self.right_dist:.2f}m, Front Distance: {self.front_dist:.2f}m")
+        # self.get_logger().info(f"Left Distance: {left_dist:.2f}m, Right Distance: {right_dist:.2f}m, Front Distance: {front_dist:.2f}m")
         
         #placeholder for future self-centering or avoidance logic
         #if left_dist < some_threshold or right_dist < some_threshold:
