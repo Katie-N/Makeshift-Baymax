@@ -3,7 +3,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
 from std_msgs.msg import Float32MultiArray  # Assuming opponent position is published as an array
-
+import time
 class Charge(Node):
     def __init__(self, name):
         super().__init__('robot_charger')
@@ -61,28 +61,40 @@ class Charge(Node):
     # depends on whether the target is visible
     # more charges -> more points! :D
     # only charges once every 5 seconds max
-    def control_loop(self):
+    def control_loop(self, msg = None):
         # if orange is not detected, the robot cannot be seen
         # spin in place to detect opponent
         twist = Twist()
 
+        # Katie
+        # If no message is passed, return
+        if msg == None:
+            # print("Target_x is none")
+            return
+
+        # Otherwise we have a point to target
+        self.target_x = msg.x
+        self.target_y = msg.y
+
         if 200 <= self.target_x <= 450:
             twist.linear.x = 1.0  # Full speed forward
-
+            print("Moving forward")
         elif self.target_x > 450:
             twist.angular.z = 0.2  # Small left turn
             twist.linear.x = 0.8   # Move forward
-
+            print("Turn left")
         elif self.target_x < 200:
+            print("Turn right")
             twist.angular.z = -0.2  # Small right turn
             twist.linear.x = 0.8    # Move forward
-
         else:
+            print("Spin to look")
             twist.angular.z = 1.0  # Slow spin
             # sleep(3)
-
         # Publish movement command
         self.cmd_vel_pub.publish(twist)
+        time.sleep(0.1)
+
 
 def main():
     charge = Charge('charge_node')

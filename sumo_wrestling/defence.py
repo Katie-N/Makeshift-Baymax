@@ -29,17 +29,8 @@ class DefenceWalls(Node):
         safe = 0.20
         turnSpeed = 0.5
         forwardSpeed = 0.2
-
-        if fdist != float('inf'):
-            print("Too close! 1")
-            move.linear.x = 0.0
-            if rdist > ldist:
-                print("Turning Right 1")
-                move.angular.z = -turnSpeed #turns right
-            else:
-                print("Turning Left 1")
-                move.angular.z = turnSpeed #turns left
-        elif fdist < safe:
+        # print(f"f={fdist} r={rdist} l={ldist} b={bdist}")
+        if fdist < safe:
             print("Too close! 2")
             move.linear.x = 0.0
             if rdist > ldist:
