@@ -9,7 +9,7 @@ class Charge(Node):
         super().__init__('robot_charger')
 
         # Publisher for velocity commands
-        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, '/controller/cmd_vel', 10)
 
         # Subscriber for opponent position (expects [x, y] coordinates)
         # assuming this will only receive data every 5 seconds (or similar) and not more
@@ -20,41 +20,8 @@ class Charge(Node):
             10
         )
 
-        # Robot's max speed parameters (assumed values, adjust if necessary)
-        self.declare_parameter('max_linear_speed', 1.0)  # m/s
-        self.declare_parameter('max_angular_speed', 1.0)  # rad/s
-        self.declare_parameter('slow_spin_speed', 0.3)  # rad/s when searching
-
-        self.linear_speed = self.get_parameter('max_linear_speed').value
-        self.angular_speed = self.get_parameter('max_angular_speed').value
-        self.spin_speed = self.get_parameter('slow_spin_speed').value
-
         self.target_x = None
         self.target_y = None
-
-        # self.timer = self.create_timer(0.1, self.control_loop)  # 10 Hz control loop
-
-    # helper function to send movement instructions to wheels
-    def axes_callback(self, axes):
-        lx = axes[0]
-        ly = axes[1]
-        duration = axes[2]
-        twist = Twist()
-
-        twist.linear.y = val_map(lx, -1, 1, -self.max_linear, self.max_linear) 
-        twist.linear.x = val_map(ly, -1, 1, -self.max_linear, self.max_linear)
-        twist.angular.z = val_map(0, -1, 1, -self.max_angular, self.max_angular)
-        self.mecanum_pub.publish(twist)
-        time.sleep(duration) # Amount of time to draw the line
-        self.stop_robot()
-    
-    # helper function to 
-    def stop_robot(self):
-        msg = Twist()
-        msg.linear.x = 0.0
-        msg.linear.y = 0.0
-        msg.angular.z = 0.0
-        self.mecanum_pub.publish(msg)
 
     # function called when the enemy coords are retreived
     # determines whether we should charge at the enemy or not
@@ -75,25 +42,23 @@ class Charge(Node):
         # Otherwise we have a point to target
         self.target_x = msg.x
         self.target_y = msg.y
-
-        if 200 <= self.target_x <= 450:
-            twist.linear.x = 1.0  # Full speed forward
-            print("Moving forward")
-        elif self.target_x > 450:
-            twist.angular.z = 0.2  # Small left turn
-            twist.linear.x = 0.8   # Move forward
-            print("Turn left")
-        elif self.target_x < 200:
-            print("Turn right")
-            twist.angular.z = -0.2  # Small right turn
-            twist.linear.x = 0.8    # Move forward
-        else:
+        if self.target_x == 0.0:
             print("Spin to look")
             twist.angular.z = 1.0  # Slow spin
-            # sleep(3)
+        elif 200 <= self.target_x <= 450:
+            print("Moving forward")
+            twist.linear.x = 0.6  # Full speed forward
+        elif self.target_x > 450:
+            print("Turn left")
+            twist.angular.z = 2.0  # Small left turn
+            twist.linear.x = 0.6   # Move forward
+        elif self.target_x < 200:
+            print("Turn right")
+            twist.angular.z = -2.0  # Small right turn
+            twist.linear.x = 0.6    # Move forward    
         # Publish movement command
         self.cmd_vel_pub.publish(twist)
-        time.sleep(0.1)
+        # time.sleep(0.1)
 
 
 def main():

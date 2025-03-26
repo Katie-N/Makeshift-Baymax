@@ -78,11 +78,11 @@ class ColorTracking(Node):
 
         # Optional: Add blurring step to remove noise from image
         gaussian = cv2.GaussianBlur(current_frame, (15, 15), 0)
-        self.ax.clear()
-        self.ax.imshow(gaussian)
-        self.ax.set_title("Real-time Image")
-        plt.draw()
-        plt.pause(0.001)  # A brief pause so the figure actually updates
+        # self.ax.clear()
+        # self.ax.imshow(gaussian)
+        # self.ax.set_title("Real-time Image")
+        # plt.draw()
+        # plt.pause(0.001)  # A brief pause so the figure actually updates
 
         height, width, channels = gaussian.shape # For color images
         # print(f"{width} x {height}")
@@ -97,20 +97,20 @@ class ColorTracking(Node):
         # This extracts the gray color of the robot
         lower_bound = np.array([31, 24, 21])
         upper_bound = np.array([71, 71, 71])
-        gray_mask = cv2.inRange(gaussian, lower_bound, upper_bound)
+        # gray_mask = cv2.inRange(gaussian, lower_bound, upper_bound)
 
         # TODO Create a binary mask of the selected color range
         # Apply the mask to the original image (we techincally only need this for our viewing purposes)
         # Combine the masks using bitwise OR
-        combined_mask = cv2.bitwise_or(orange_mask, gray_mask)
+        # combined_mask = cv2.bitwise_or(orange_mask, gray_mask)
 
         # Get the color's centroid x and y components ( we compute this in a custom function below )
-        centroid_x, centroid_y = self.get_color_centroid( combined_mask )
+        centroid_x, centroid_y = self.get_color_centroid( orange_mask )
         # The camera's resolution is 
 
 
         # TODO Move depending on centroid location
-        scalingFactor = 0.25 # To slow the robot down, we can adjust this scaling factor without affecting the actual path taken.
+        # scalingFactor = 0.25 # To slow the robot down, we can adjust this scaling factor without affecting the actual path taken.
         # angle = self.cameraCoordsToAngle(centroid_x, centroid_y)
              
         # yara
@@ -173,14 +173,12 @@ class ColorTracking(Node):
                 
 
 def main():
+    rclpy.init()
     color_tracking_node = ColorTracking('color_tracking_node')
-    try:
-        rclpy.spin(color_tracking_node)
-    except:
-        color_tracking_node.destroy_node()
-        rclpy.shutdown()
+    rclpy.spin(color_tracking_node)
+    color_tracking_node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':
-    rclpy.init()
     main()
