@@ -31,18 +31,26 @@ class WallTracker(Node):
         distances = np.array(msg.ranges)
 
         offset = 45
-        self.left_dist = float(np.nanmin(distances[offset+45:135+offset]))   
-        self.right_dist = float(np.nanmin(distances[offset+225:offset+315])) 
-        self.front_dist = float(np.nanmin(np.concatenate((distances[0:offset+45], distances[offset+315:360]), axis=0)))
-        self.back_dist = float(np.nanmin(distances[offset+135:offset+225])) 
+        left_distances = distances[offset+45:135+offset]
+        right_distances = distances[offset+225:offset+315]
+        front_distances = np.concatenate((distances[0:offset+45], distances[offset+315:360]), axis=0)
+        back_distances = distances[offset+135:offset+225]
 
+        if (distances.size == 0 or left_distances.size == 0 or right_distances.size == 0 or front_distances.size == 0 or back_distances.size == 0):
+            print("NAN error")
+            return
 
+        self.left_dist = float(np.nanmin(left_distances))
+        self.right_dist = float(np.nanmin(right_distances))
+        self.front_dist = float(np.nanmin(front_distances))
+        self.back_dist = float(np.nanmin(back_distances))
+        
         msg = Float32MultiArray()
         msg.data = [self.front_dist, self.right_dist, self.back_dist, self.left_dist]
         self.wall_distances.publish(msg)
         
         # Log detected distances for debugging and implementation
-        # self.get_logger().info(f"Left Distance: {self.left_dist:.2f} m, Right Distance: {self.right_dist:.2f} m, Front Distance: {self.front_dist:.2f} m, Back Distance: {self.back_dist:.2f} m")
+        self.get_logger().info(f"Left Distance: {self.left_dist:.2f} m, Right Distance: {self.right_dist:.2f} m, Front Distance: {self.front_dist:.2f} m, Back Distance: {self.back_dist:.2f} m")
 
 
 def main(args=None):
