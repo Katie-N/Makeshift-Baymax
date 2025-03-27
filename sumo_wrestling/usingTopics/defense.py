@@ -2,8 +2,6 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
-
-# from Sumo_Walls.detectWalls import WallTracker
 from std_msgs.msg import Float32MultiArray
 
 class DefenceWalls(Node):
@@ -12,8 +10,6 @@ class DefenceWalls(Node):
         self.attack = False
         self.defend = False
 
-        # self.detectWalls = WallTracker()
-        # self.timer = self.create_timer(0.1, self.avoidWalls) #Checks distances and changes movement every 0.1s to avoid walls
         self.cmd_pub = self.create_publisher(Twist, '/controller/cmd_vel', 10) #Movement Commands
 
         self.wall_distances = self.create_subscription(
@@ -56,86 +52,82 @@ class DefenceWalls(Node):
         twist = Twist()
 
         safe = 0.25
-        # frontSafe = 0.5
-        turnSpeed = 1.5
-        forwardSpeed = 0.6
+        frontSafe = 0.25
+        
+        turnSpeed = 1.0
+        turnLeft = turnSpeed
+        turnRight = -turnSpeed
+        linearSpeed = 0.6
+        goForward = linearSpeed
+        goBack = -linearSpeed
+        goRight = -linearSpeed
+        goLeft = linearSpeed
 
-        if (fdist <= safe):
+        twist.angular.z = 0.0
+
+        if (fdist <= frontSafe):
             if (rdist<=safe):
                 # move backwards and left
-            elif (ldist <= safe)
+                twist.linear.x = goBack
+                twist.linear.y = goLeft
+                # twist.angular.z = turnLeft
+                # print("back left")
+            elif (ldist <= safe):
                 # move backwards and right
+                twist.linear.x = goBack
+                twist.linear.y = goRight
+                # twist.angular.z = turnRight
+                # print("back right")
             else:
                 # move backwards
-        elif (bdist <= safe):
+                twist.linear.x = goBack
+                twist.linear.y = 0.0
+                # twist.angular.z = 0.0
+                # print("back")
+        elif (bdist <= frontSafe):
             if (rdist<=safe):
                 # move forward and left
-            elif (ldist <= safe)
+                twist.linear.x = goForward
+                twist.linear.y = goLeft
+                # twist.angular.z = turnLeft
+                # print("forward left")
+
+            elif (ldist <= safe):
                 # move forward and right
+                twist.linear.x = goForward
+                twist.linear.y = goRight
+                # twist.linear.y = turnRight
+                # print("forward right")
+
             else:
-                # move forward'
-        elif( rdist <= safe):
+                # Move forward
+                twist.linear.x = goForward
+                twist.linear.y = 0.0
+                # twist.angular.z = 0.0
+                # print("forward")
+
+        elif(rdist <= safe):
             # Move left
+            # twist.angular.z = turnLeft
+            twist.linear.x = 0.0
+            twist.linear.y = goLeft
+            # print("left")
+
+
         elif(ldist <= safe):
             # move right
+            # twist.angular.z = turnRight
+            twist.linear.x = 0.0            
+            twist.linear.y = goRight
+            # print("right")
+
         else:
             # stop
+            twist.linear.x = 0.0            
+            twist.linear.y = 0.0
+            twist.angular.z = 0.0
+            # print("stop")
 
-
-        # if fdist <= safe:
-        #     # drive backwards
-        #     print("going backward")
-        #     twist.linear.x = 0
-        #     twist.angular.z = 0
-        #     # twist.linear.x = -0.6
-        # elif bdist <= safe:
-        #     # drive forward
-        #     print("going forward")
-        #     twist.linear.x = 0.6
-        # elif rdist <= safe:
-        #     # turn left
-        #     print("going left")
-        #     twist.angular.z = 2.0 
-        #     twist.linear.x = 0.6 
-        # elif ldist <= safe:
-        #     # turn right
-        #     print("going right")
-        #     twist.angular.z = -2.0
-        #     twist.linear.x = 0.6
-        
-        
-        # # print(f"f={fdist} r={rdist} l={ldist} b={bdist}")
-        # if fdist < safe: #Too close in the front
-        #     print("Too close! 2")
-        #     move.linear.x = 0.0
-        #     if rdist > ldist:
-        #         print("Turning Right 2")
-        #         move.angular.z = -turnSpeed #turns right
-        #     else:
-        #         print("Turning Left 2")
-        #         move.angular.z = turnSpeed #turns left
-        # elif rdist < safe: #Too close on the right
-        #     print("On the right!")
-        #     move.angular.z = turnSpeed
-        # elif ldist < safe: #Too close on the left
-        #     print("On the left!")
-        #     move.angular.z = -turnSpeed
-        # elif bdist < safe: #Too close on in the back
-        #     print("Behind you!")
-        #     move.linear.x = 0.0
-        #     if rdist > ldist:
-        #         print("Turning Right 2")
-        #         move.angular.z = -turnSpeed #turns right
-        #     else:
-        #         print("Turning Left 2")
-        #         move.angular.z = turnSpeed #turns left
-        # else:
-        #     print("All good!")
-        #     print(f"{fdist}, {rdist}, {ldist}")
-        #     #move.linear.x = forwardSpeed
-        #     #I don't want it to move forward anymore because that's the attack's job to move forward.
-        #     move.angular.z = 0.0       
-        
         self.cmd_pub.publish(twist)
 
 def main(args=None):

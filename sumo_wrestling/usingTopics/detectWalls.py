@@ -14,12 +14,6 @@ class WallTracker(Node):
             '/scan_raw',  #topic for LiDAR sensor readings
             self.lidar_callback,
             10)
-        """
-        for if we decide to implement the feature where it moves away from
-        wall if within designated distance
-        """
-        #desired distance from walls (meters)
-        self.target_distance = 0.5
 
         self.wall_distances = self.create_publisher(Float32MultiArray, '/wall_distances', 10)
         
@@ -35,25 +29,20 @@ class WallTracker(Node):
         calculates distances to the left, right, and front as the robot moves.
         """
         distances = np.array(msg.ranges)
-        if (np.isnan(distances).any()):
-            return
 
-        #extract minimum distance from specific angle ranges
-        self.left_dist = float(min(distances[45:135]))   
-        self.right_dist = float(min(distances[225:315])) 
-        self.front_dist = float(min(distances[0:45] + distances[315:360]))  
-        self.back_dist = float(min(distances[135:225])) 
-        
+        offset = 45
+        self.left_dist = float(np.nanmin(distances[offset+45:135+offset]))   
+        self.right_dist = float(np.nanmin(distances[offset+225:offset+315])) 
+        self.front_dist = float(np.nanmin(np.concatenate((distances[0:offset+45], distances[offset+315:360]), axis=0)))
+        self.back_dist = float(np.nanmin(distances[offset+135:offset+225])) 
+
+
         msg = Float32MultiArray()
         msg.data = [self.front_dist, self.right_dist, self.back_dist, self.left_dist]
         self.wall_distances.publish(msg)
         
-        #logging detected distances for debugging and implementation
-        self.get_logger().info(f"Left Distance: {self.left_dist:.2f} m, Right Distance: {self.right_dist:.2f} m, Front Distance: {self.front_dist:.2f} m, Back Distance: {self.back_dist:.2f} m")
-        
-        #placeholder for future self-centering or avoidance logic
-        #if left_dist < some_threshold or right_dist < some_threshold:
-        #adjust movement to avoid walls
+        # Log detected distances for debugging and implementation
+        # self.get_logger().info(f"Left Distance: {self.left_dist:.2f} m, Right Distance: {self.right_dist:.2f} m, Front Distance: {self.front_dist:.2f} m, Back Distance: {self.back_dist:.2f} m")
 
 
 def main(args=None):

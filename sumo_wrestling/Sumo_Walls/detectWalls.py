@@ -36,10 +36,10 @@ class WallTracker(Node):
         """
         distances = np.array(msg.ranges)
         #extract minimum distance from specific angle ranges
-        self.left_dist = float(min(distances[50:130]))   #left side (60° to 120°)
-        self.right_dist = float(min(distances[250:310])) #right side (240° to 300°)
-        self.front_dist = float(min(distances[0:50] + distances[310:360]))  #front (0°-20° & 340°-360°)
-        self.back_dist = float(min(distances[130:250])) # back (120 to 240)
+        self.left_dist = float(min(distances[50:130]))   # left
+        self.right_dist = float(min(distances[250:310])) # right
+        self.front_dist = float(min(distances[0:50] + distances[310:360]))  # front
+        self.back_dist = float(min(distances[130:250])) # back
         
         msg = Float32MultiArray()
         msg.data = [self.front_dist, self.right_dist, self.back_dist, self.left_dist]

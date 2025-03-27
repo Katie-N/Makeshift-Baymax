@@ -7,8 +7,6 @@ import time
 class Charge(Node):
     def __init__(self, name):
         super().__init__('robot_charger')
-        self.attack = False
-        self.defend = False
 
         # Publisher for velocity commands
         self.cmd_vel_pub = self.create_publisher(Twist, '/controller/cmd_vel', 10)
@@ -32,6 +30,9 @@ class Charge(Node):
 
         self.target_x = None
         self.target_y = None
+        self.attack = False
+        self.defend = False
+        self.lastX = 0
 
     def checkInstruction(self, msg):
         if msg.x == 1.0:
@@ -63,27 +64,42 @@ class Charge(Node):
         if msg == None:
             # print("Target_x is none")
             return
+        
+        linearSpeed = 0.6
+        angularSpeed = 2.0
 
         # Otherwise we have a point to target
         self.target_x = msg.x
         self.target_y = msg.y
         if self.target_x == 0.0:
-            print("Spin to look")
-            twist.angular.z = 1.0  # Slow spin
+            # print("Spin to look")
+            # The camera's resolution is 640x480 so if x is less than 320, then it was on the left side. If x > 320 it must have been on the right.
+            if (self.lastX < 320):
+                twist.angular.z = 1.0  # Slow spin left. It can't be any higher than this or it overshoots. It spins faster than it processes the next frame
+            else:
+                twist.angular.z = -1.0  # Slow spin right
+            twist.linear.x = 0.0 
+
         elif 200 <= self.target_x <= 450:
-            print("Moving forward")
-            twist.linear.x = 0.6  # Full speed forward
+            # print("Moving forward")
+            twist.angular.z = 0.0 
+            twist.linear.x = linearSpeed  # Full speed forward
+            self.lastX = self.target_x
+
         elif self.target_x < 200:
-            print("Turn left")
-            twist.angular.z = 2.0  # Small left turn
-            twist.linear.x = 0.6   # Move forward
+            # print("Turn left")
+            twist.angular.z = angularSpeed  # Small left turn
+            twist.linear.x = linearSpeed   # Move forward
+            self.lastX = self.target_x
+
         elif self.target_x > 450:
-            print("Turn right")
-            twist.angular.z = -2.0  # Small right turn
-            twist.linear.x = 0.6    # Move forward    
+            # print("Turn right")
+            twist.angular.z = -angularSpeed  # Small right turn
+            twist.linear.x = linearSpeed    # Move forward   
+            self.lastX = self.target_x
+
         # Publish movement command
         self.cmd_vel_pub.publish(twist)
-        # time.sleep(0.1)
 
 
 def main():
