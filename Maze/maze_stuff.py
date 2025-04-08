@@ -44,6 +44,16 @@ class MazeSolver(Node):
         
         # Follow the computed shortest path to the goal
         self.follow_shortest_path()
+    def stop_moving(self):
+        """Stops the robot's movement."""
+        print("stop_moving()")
+
+        twist = Twist()
+        twist.linear.x = 0.0
+        twist.linear.y = 0.0
+        twist.angular.z = 0.0
+        self.cmd_pub.publish(twist)
+        time.sleep(0.5)  # Give time to stop
     
     def lidar_callback(self, msg):
         """Processes LiDAR data to update the grid with walls."""
@@ -179,10 +189,11 @@ class MazeSolver(Node):
         print("move_forward()")
 
         twist = Twist()
-        twist.linear.x = 0.05  # Small forward movement (adjust as needed)
-        self.cmd_pub.publish(twist)  # Publish the movement command
-        self.robot_pos = self.update_position()  # Update the robot's position
-        time.sleep(1)
+        twist.linear.x = 0.05
+        self.cmd_pub.publish(twist)
+        time.sleep(0.5)  # Give time to move
+        self.stop_moving()
+        self.robot_pos = self.update_position()
 
     def turn_right(self):
         """Turns the robot 90 degrees to the right."""
@@ -191,8 +202,10 @@ class MazeSolver(Node):
         twist = Twist()
         twist.angular.z = -1.57  # Approximate 90-degree turn
         self.cmd_pub.publish(twist)  # Publish the turn command
+        time.sleep(0.5)  # Give time to move
+        self.stop_moving()
         self.robot_direction = (self.robot_direction + 1) % 4  # Update robot's facing direction
-    
+
     def turn_left(self):
         """Turns the robot 90 degrees to the left."""
         print("turn_left()")
@@ -200,8 +213,10 @@ class MazeSolver(Node):
         twist = Twist()
         twist.angular.z = 1.57  # Approximate 90-degree turn
         self.cmd_pub.publish(twist)  # Publish the turn command
+        time.sleep(0.5)
+        self.stop_moving()
         self.robot_direction = (self.robot_direction - 1) % 4  # Update robot's facing direction
-    
+
     def front_clear(self):
         """Checks if the front is clear using LiDAR data."""
         print("front_clear()")
@@ -264,7 +279,19 @@ class MazeSolver(Node):
             return (self.robot_pos[0], self.robot_pos[1] - 1)  # Move up
     
     def run(self):
+        # Wait for a bit to ensure sensor data is coming in
+        self.get_logger().info("Waiting for sensor data...")
+        time.sleep(2)
+        self.explore_maze()
+        self.shortest_path = self.compute_shortest_path()
+        self.follow_shortest_path()
         rclpy.spin(self)
+
+
+    def print_grid(self):
+        for row in self.grid.T[::-1]:  # Flip Y for visualization
+            print(''.join(['#' if cell == 1 else '.' for cell in row]))
+
 
 if __name__ == '__main__':
     rclpy.init()  
