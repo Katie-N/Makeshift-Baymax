@@ -186,7 +186,7 @@ class MazeSolver(Node):
 
     def turn_right(self):
         """Turns the robot 90 degrees to the right."""
-        print("turn_righht()")
+        print("turn_right()")
 
         twist = Twist()
         twist.angular.z = -1.57  # Approximate 90-degree turn
@@ -251,12 +251,16 @@ class MazeSolver(Node):
 
         # Update position based on the robot's current direction
         if self.robot_direction == 0:
+            print("Moving right")
             return (self.robot_pos[0] + 1, self.robot_pos[1])  # Move right
         elif self.robot_direction == 1:
+            print("Moving down")
             return (self.robot_pos[0], self.robot_pos[1] + 1)  # Move down
         elif self.robot_direction == 2:
+            print("Moving left")
             return (self.robot_pos[0] - 1, self.robot_pos[1])  # Move left
         elif self.robot_direction == 3:
+            print("Moving up")
             return (self.robot_pos[0], self.robot_pos[1] - 1)  # Move up
     
     def run(self):
