@@ -6,6 +6,7 @@ from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 import cv2
 import heapq
+import time
 
 class MazeSolver(Node):
     def __init__(self):
@@ -46,6 +47,8 @@ class MazeSolver(Node):
     
     def lidar_callback(self, msg):
         """Processes LiDAR data to update the grid with walls."""
+        print("lidar_callback()")
+        print(msg.ranges)
         for i, distance in enumerate(msg.ranges):
             if distance < 0.5:  # Threshold to detect walls (meters)
                 x, y = self.get_grid_coordinates(i, distance)
@@ -55,6 +58,7 @@ class MazeSolver(Node):
     # Got mostly from Katie's Sumo code
     def camera_callback(self, msg):
         """Processes camera images to detect colored walls."""
+        print("wall_distance()")
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')  # Convert ROS image message to OpenCV format
         detected_color = self.detect_color(cv_image)  # Detect color in the image
         
@@ -70,6 +74,7 @@ class MazeSolver(Node):
     
     def detect_color(self, image):
         """Detects color in an image using HSV filtering."""
+        print("detect_color()")
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)  # Convert image to HSV color space
         
         # Define color ranges for detection
@@ -90,6 +95,8 @@ class MazeSolver(Node):
     # Not good at the math stuff so this may need to be fixed
     def get_grid_coordinates(self, angle, distance):
         """Converts LiDAR angle and distance data into grid coordinates."""
+        print("get_grid_coordinates()")
+
         # Calculate x, y coordinates based on robot's position and LiDAR data
         x = int(self.robot_pos[0] + distance * np.cos(np.radians(angle)))
         y = int(self.robot_pos[1] + distance * np.sin(np.radians(angle)))
@@ -97,6 +104,8 @@ class MazeSolver(Node):
     
     def explore_maze(self):
         """Wall-following algorithm to explore the maze."""
+        print("explore_maze()")
+
         self.get_logger().info("Starting wall-following exploration...")
         
         # Continue exploration until the goal is found
@@ -116,6 +125,8 @@ class MazeSolver(Node):
     
     def compute_shortest_path(self):
         """Finds the shortest path to the goal using Dijkstra's Algorithm."""
+        print("computeShortestPath()")
+
         if self.goal_pos is None:
             return []  # No goal, no path
         
@@ -155,6 +166,9 @@ class MazeSolver(Node):
     
     def follow_shortest_path(self):
         """Follows the shortest path to the goal."""
+        print("follow_shortest_path()")
+
+
         for step in self.shortest_path:
             self.robot_pos = step  # Update robot's position to the next step in the path
             self.move_forward()  # Move robot forward by one step
@@ -162,13 +176,18 @@ class MazeSolver(Node):
     
     def move_forward(self):
         """Moves the robot forward one step (1 inch)."""
+        print("move_forward()")
+
         twist = Twist()
         twist.linear.x = 0.05  # Small forward movement (adjust as needed)
         self.cmd_pub.publish(twist)  # Publish the movement command
         self.robot_pos = self.update_position()  # Update the robot's position
-    
+        time.sleep(1)
+
     def turn_right(self):
         """Turns the robot 90 degrees to the right."""
+        print("turn_righht()")
+
         twist = Twist()
         twist.angular.z = -1.57  # Approximate 90-degree turn
         self.cmd_pub.publish(twist)  # Publish the turn command
@@ -176,6 +195,8 @@ class MazeSolver(Node):
     
     def turn_left(self):
         """Turns the robot 90 degrees to the left."""
+        print("turn_left()")
+
         twist = Twist()
         twist.angular.z = 1.57  # Approximate 90-degree turn
         self.cmd_pub.publish(twist)  # Publish the turn command
@@ -183,6 +204,8 @@ class MazeSolver(Node):
     
     def front_clear(self):
         """Checks if the front is clear using LiDAR data."""
+        print("front_clear()")
+
         x, y = self.robot_pos
         if self.robot_direction == 0:
             check_x, check_y = x + 1, y
@@ -202,6 +225,8 @@ class MazeSolver(Node):
     
     def wall_on_right(self):
         """Checks if there is a wall to the right of the robot."""
+        print("wall_on_right()")
+
         x, y = self.robot_pos
         # Adjust based on direction
         if self.robot_direction == 0:
@@ -222,6 +247,8 @@ class MazeSolver(Node):
     
     def update_position(self):
         """Updates the robot's position based on its movement direction."""
+        print("update_position()")
+
         # Update position based on the robot's current direction
         if self.robot_direction == 0:
             return (self.robot_pos[0] + 1, self.robot_pos[1])  # Move right
