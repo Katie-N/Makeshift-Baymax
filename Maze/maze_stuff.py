@@ -183,11 +183,42 @@ class MazeSolver(Node):
     
     def front_clear(self):
         """Checks if the front is clear using LiDAR data."""
-        return self.grid[self.robot_pos[0] + 1][self.robot_pos[1]] != 1  # Check if front cell is a wall
+        x, y = self.robot_pos
+        if self.robot_direction == 0:
+            check_x, check_y = x + 1, y
+        elif self.robot_direction == 1:
+            check_x, check_y = x, y + 1
+        elif self.robot_direction == 2:
+            check_x, check_y = x - 1, y
+        elif self.robot_direction == 3:
+            check_x, check_y = x, y - 1
+        else:
+            return False
+
+        if 0 <= check_x < self.grid_size[0] and 0 <= check_y < self.grid_size[1]:
+            return self.grid[check_x, check_y] != 1
+        return False
+
     
     def wall_on_right(self):
         """Checks if there is a wall to the right of the robot."""
-        return self.grid[self.robot_pos[0]][self.robot_pos[1] + 1] == 1  # Check if right cell is a wall
+        x, y = self.robot_pos
+        # Adjust based on direction
+        if self.robot_direction == 0:
+            check_x, check_y = x, y + 1
+        elif self.robot_direction == 1:
+            check_x, check_y = x - 1, y
+        elif self.robot_direction == 2:
+            check_x, check_y = x, y - 1
+        elif self.robot_direction == 3:
+            check_x, check_y = x + 1, y
+        else:
+            return False  # Unknown direction
+
+        if 0 <= check_x < self.grid_size[0] and 0 <= check_y < self.grid_size[1]:
+            return self.grid[check_x, check_y] == 1
+        return False
+
     
     def update_position(self):
         """Updates the robot's position based on its movement direction."""
