@@ -13,11 +13,11 @@ class MazeSolver(Node):
         super().__init__('maze_solver')
         
         # Subscribe to LiDAR data and camera image data
-        self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
+        self.lidar_sub = self.create_subscription(LaserScan, '/scan_raw', self.lidar_callback, 10)
         self.camera_sub = self.create_subscription(Image, '/camera/image_raw', self.camera_callback, 10)
         
         # Publisher for robot movement commands
-        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_pub = self.create_publisher(Twist, '/controller/cmd_vel', 10)
         
         # Convert ROS2 image messages to OpenCV format
         self.bridge = CvBridge()
