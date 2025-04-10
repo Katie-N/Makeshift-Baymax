@@ -285,12 +285,11 @@ class mapWalls(Node):
         # The position of the robot is only updated after move_forward(). 
         # So we do not need to call it here.
         # Just rely on all of the linear movement functions to update the position after running!
-        # self.update_position()
 
         # Then we can map the walls near the robot using the lidar data
-        while(not self.shared_wall_distances):
+        while all (dist == 0 for dist in self.shared_wall_distances):
             print("Not ready yet")
-            time.sleep(0.5)
+            time.sleep(0.1)
 
 
         self.mapNearestWalls()
