@@ -306,7 +306,7 @@ class mapWalls(Node):
             time.sleep(0.1)
 
 
-        # self.mapNearestWalls()
+        self.mapNearestWalls()
 
         # This just maps the walls and moves forward repeatedly.
         # It is only here to show how to update the grid after movement. 

@@ -3,6 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Float32MultiArray
 import numpy as np
+# import systemVariables
 
 class WallTracker(Node):
     def __init__(self, shared_wall_distances):
@@ -31,12 +32,15 @@ class WallTracker(Node):
         calculates distances to the left, right, and front as the robot moves.
         """
         distances = np.array(msg.ranges)
+        print(len(msg.ranges))
 
         offset = 45
-        left_distances = distances[offset+45:135+offset]
-        right_distances = distances[offset+225:offset+315]
-        front_distances = np.concatenate((distances[0:offset+45], distances[offset+315:360]), axis=0)
-        back_distances = distances[offset+135:offset+225]
+        n = 50 # n is arbitrary
+        section = int(len(msg.ranges)//4) # divide into sections
+        left_distances = distances[1*section - n:1*section + n]
+        right_distances = distances[3*section - n: 3*section + n]
+        front_distances = np.concatenate((distances[0:n], distances[4*section - n:4*section], ), axis=0)
+        back_distances = distances[2*section - n:2*section + n]
 
         if (distances.size == 0 or left_distances.size == 0 or right_distances.size == 0 or front_distances.size == 0 or back_distances.size == 0):
             # print("NAN error")
@@ -51,10 +55,10 @@ class WallTracker(Node):
         msg.data = [self.front_dist, self.right_dist, self.back_dist, self.left_dist]
         self.wall_distances.publish(msg)
         self.shared_wall_distances[:] = msg.data
-        print(self.shared_wall_distances[:])
+        # print(self.shared_wall_distances[:])
         
         # Log detected distances for debugging and implementation
-        # self.get_logger().info(f"Left Distance: {self.left_dist:.2f} m, Right Distance: {self.right_dist:.2f} m, Front Distance: {self.front_dist:.2f} m, Back Distance: {self.back_dist:.2f} m")
+        self.get_logger().info(f"Left Distance: {self.left_dist:.2f} m, Right Distance: {self.right_dist:.2f} m, Front Distance: {self.front_dist:.2f} m, Back Distance: {self.back_dist:.2f} m")
 
 
 def main(shared_wall_distances):
