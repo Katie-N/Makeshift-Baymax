@@ -20,10 +20,13 @@ class mapWalls(Node):
         self.heightInMeters = 1.524 # 5 feet
         self.grid_size = (ceil(self.widthInMeters/self.cell_size), ceil(self.heightInMeters/self.cell_size))  # (x, y) dimensions
         # Initialize the grid with -1 (unmapped)
-        self.grid = [[-1 for i in range(self.grid_size[0])] for i in range(self.grid_size[1])]
+        self.grid = [[-1 for i in range(self.grid_size[1])] for i in range(self.grid_size[0])]
         self.robot_direction = 0  # 0: up, 1: right, 2: down, 3: left
 
-        self.robot_pos = [self.grid_size[0] // 2,self.grid_size[1] // 2] # Starting position around the center
+        startingPosition = "center"
+        if startingPosition == "center":
+            self.robot_pos = [self.grid_size[0] // 2,self.grid_size[1] // 2] # Starting position around the center
+
         self.shared_wall_distances = shared_wall_distances
 
         self.cmd_pub = self.create_publisher(Twist, '/controller/cmd_vel', 10) #Movement Commands
@@ -37,13 +40,17 @@ class mapWalls(Node):
     #        front
     # 
     def print_grid(self):
+        print("_"* len(self.grid[0]))
         for row in self.grid:
-            rowString = ''
+            rowString = '|'
             for cell in row:
                 if cell == 0: rowString += '.'
                 elif cell == 1: rowString += '#'
                 else: rowString += " "
+            rowString += "|"
             print(rowString)
+        print("_"* len(self.grid[0]))
+
 
     def mapNearestWalls(self):        
         fdist = self.shared_wall_distances[0]
@@ -62,6 +69,7 @@ class mapWalls(Node):
         cellOnLeft = self.grid[self.robot_pos[0]][self.robot_pos[1]+1]
         cellInBack = self.grid[self.robot_pos[0]-1][self.robot_pos[1]]
         cellOnRight = self.grid[self.robot_pos[0]][self.robot_pos[1]-1]
+        print(f"Exists?: {self.grid[self.robot_pos[0]+1]}")
         cellInFront = self.grid[self.robot_pos[0]+1][self.robot_pos[1]]
 
         distToNextCell = self.cell_size
@@ -75,7 +83,8 @@ class mapWalls(Node):
                 self.grid[self.robot_pos[0]][self.robot_pos[1]+1] = 1
             else:
                 # Mark cell on the left as empty
-                self.grid[self.robot_pos[0]][self.robot_pos[1]+1] = 0                
+                self.grid[self.robot_pos[0]][self.robot_pos[1]+1] = 0
+
                 # # Otherwise the closest wall in front is far enough away to map some empty cells.
                 # # Loop through the distance to the wall in the front and mark each cell as empty
                 # for i in range(int(ldist // distToNextCell)):
@@ -96,7 +105,8 @@ class mapWalls(Node):
             else:
                 # Mark cell immediately behind as empty
                 self.grid[self.robot_pos[0]-1][self.robot_pos[1]] = 0
-                # # There is NOT a wall in the cell on the right
+                
+                # There is NOT a wall in the cell on the right
                 # for i in range(int(bdist // distToNextCell)):
                 #     # Map the cells on the right to be empty
                 #     self.grid[self.robot_pos[0]-1-i][self.robot_pos[1]] = 0
@@ -112,6 +122,7 @@ class mapWalls(Node):
             else:
                 # Mark cell to the right as empty
                 self.grid[self.robot_pos[0]][self.robot_pos[1]-1] = 0
+                
                 # for i in range(int(rdist // distToNextCell)):
                 #     # Map the cells in the back to be empty
                 #     self.grid[self.robot_pos[0]][self.robot_pos[1]-1-i] = 0
@@ -127,6 +138,7 @@ class mapWalls(Node):
             else:
                 # Mark cell in front as empty
                 self.grid[self.robot_pos[0]+1][self.robot_pos[1]] = 0
+                
                 # for i in range(int(fdist // distToNextCell)):
                 #     # Map the cells on the left to be empty
                 #     self.grid[self.robot_pos[0]+1+i][self.robot_pos[1]] = 0
@@ -180,7 +192,7 @@ class mapWalls(Node):
         # Theoretically this should move the robot 0.15 meters in 1 second.
         # However if his is not the case we can adjust the time.sleep() or linear.x
         twist = Twist()
-        twist.linear.x = 0.15   
+        twist.linear.x = 0.10   
         self.cmd_pub.publish(twist)
         time.sleep(1)  # Give time to move
         self.stop_moving()
@@ -258,19 +270,19 @@ class mapWalls(Node):
 
         # Update position based on the robot's current direction
         if self.robot_direction == 0:
-            print("Moving right")
+            print("Moving forward")
             self.robot_pos[0] += 1
             return # (self.robot_pos[0] + 1, self.robot_pos[1])  # Move right
         elif self.robot_direction == 1:
-            print("Moving down")
+            print("Moving left")
             self.robot_pos[1] += 1
             return # (self.robot_pos[0], self.robot_pos[1] + 1)  # Move down
         elif self.robot_direction == 2:
-            print("Moving left")
+            print("Moving backward")
             self.robot_pos[0] -= 1
             return # (self.robot_pos[0] - 1, self.robot_pos[1])  # Move left
         elif self.robot_direction == 3:
-            print("Moving up")
+            print("Moving right")
             self.robot_pos[1] -= 1
             return # (self.robot_pos[0], self.robot_pos[1] - 1)  # Move up
     
@@ -294,12 +306,14 @@ class mapWalls(Node):
             time.sleep(0.1)
 
 
-        self.mapNearestWalls()
+        # self.mapNearestWalls()
 
         # This just maps the walls and moves forward repeatedly.
         # It is only here to show how to update the grid after movement. 
         # In the future instead of move_forward it will be following the wall and updating the map every second or so.
-        for i in range(4):
+        for i in range((self.grid_size[0] // 2) - 1):
+            print(f"Grid size: {self.grid_size}")
+            print(f"Robot Position: {self.robot_pos}")
             self.move_forward()
             self.mapNearestWalls()
         
