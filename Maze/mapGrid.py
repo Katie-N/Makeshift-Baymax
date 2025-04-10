@@ -145,7 +145,7 @@ class mapWalls(Node):
         twist.linear.y = 0.0
         twist.angular.z = 0.0
         self.cmd_pub.publish(twist)
-        time.sleep(0.5)  # Give time to stop
+        time.sleep(0.25)  # Give time to stop
     
     def explore_maze(self):
         """Wall-following algorithm to explore the maze."""
@@ -171,14 +171,16 @@ class mapWalls(Node):
         self.get_logger().info("Exploration complete!")
     
     # Move forward by 1 cell
-    # Going this speed for 0.5 seconds should result in traveling 0.15 meters.
-    # Figure out what speed to use.
+    # Going this speed for 1 second should result in traveling 0.15 meters.
     def move_forward(self):
         """Moves the robot forward one cell."""
         print("move_forward()")
 
+        # Move forward at 0.15 m/s
+        # Theoretically this should move the robot 0.15 meters in 1 second.
+        # However if his is not the case we can adjust the time.sleep() or linear.x
         twist = Twist()
-        twist.linear.x = 0.1 
+        twist.linear.x = 0.15   
         self.cmd_pub.publish(twist)
         time.sleep(1)  # Give time to move
         self.stop_moving()
