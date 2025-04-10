@@ -272,6 +272,15 @@ class mapWalls(Node):
             self.robot_pos[1] -= 1
             return # (self.robot_pos[0], self.robot_pos[1] - 1)  # Move up
     
+    def writeGridToFile(self):
+        """Writes the grid to a file."""
+        print("writeGridToFile()")
+
+        with open("grid.txt", "w") as f:
+            for row in self.grid:
+                f.write(" ".join(str(cell) for cell in row) + "\n")
+        print("Grid written to grid.txt")
+    
     def controller(self):
         # The position of the robot is only updated after move_forward(). 
         # So we do not need to call it here.
@@ -292,7 +301,8 @@ class mapWalls(Node):
         for i in range(4):
             self.move_forward()
             self.mapNearestWalls()
-
+        
+        self.writeGridToFile()
         # self.turn_right()
         # self.move_forward()
         # self.mapNearestWalls()
