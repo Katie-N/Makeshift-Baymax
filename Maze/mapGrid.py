@@ -15,9 +15,9 @@ class mapWalls(Node):
     def __init__(self, shared_wall_distances):
         super().__init__('wall_avoider')
         self.cell_size = 0.15  # Size of each cell in the grid (in meters)
-        # Fixed-size grid (inches or arbitrary resolution)
-        self.widthInMeters = 1.8288 # PLACEHOLDER
-        self.heightInMeters = 2.1336 # PLACEHOLDER
+        # Fixed-size grid
+        self.widthInMeters = 1.8288 # 6 feet
+        self.heightInMeters = 1.524 # 5 feet
         self.grid_size = (ceil(self.widthInMeters/self.cell_size), ceil(self.heightInMeters/self.cell_size))  # (x, y) dimensions
         # Initialize the grid with -1 (unmapped)
         self.grid = [[-1 for i in range(self.grid_size[0])] for i in range(self.grid_size[1])]
@@ -31,10 +31,13 @@ class mapWalls(Node):
         # Start the controller node to handle all of the logic and functions
         self.controller()
 
+    # The printed grid will have the orientation:
+    #        back
+    #   right     left
+    #        front
+    # 
     def print_grid(self):
-        # for row in self.grid:
-        #     print(row)
-        for row in self.grid:  # Flip Y for visualization
+        for row in self.grid:
             rowString = ''
             for cell in row:
                 if cell == 0: rowString += '.'
@@ -49,9 +52,6 @@ class mapWalls(Node):
         ldist = self.shared_wall_distances[3]
         print(f"{fdist}, {rdist}, {bdist}, {ldist}")
 
-        # turnSpeed = 1.0
-        # turnLeft = turnSpeed
-        # turnRight = -turnSpeed
         linearSpeed = 0.6
         goForward = linearSpeed
         goBack = -linearSpeed
@@ -59,81 +59,80 @@ class mapWalls(Node):
         goLeft = linearSpeed
 
         # Check the nearby cells so we don't try to overwrite them
-        # Front -> left
-        # Right -> back
-        # Back -> right 
-        # Left -> front
         cellOnLeft = self.grid[self.robot_pos[0]][self.robot_pos[1]+1]
         cellInBack = self.grid[self.robot_pos[0]-1][self.robot_pos[1]]
         cellOnRight = self.grid[self.robot_pos[0]][self.robot_pos[1]-1]
         cellInFront = self.grid[self.robot_pos[0]+1][self.robot_pos[1]]
 
-        # cellInFront = self.grid[self.robot_pos[0]][self.robot_pos[1]+1]
-        # cellOnRight = self.grid[self.robot_pos[0]-1][self.robot_pos[1]]
-        # cellInBack = self.grid[self.robot_pos[0]][self.robot_pos[1]-1]
-        # cellOnLeft = self.grid[self.robot_pos[0]+1][self.robot_pos[1]]
-
         distToNextCell = self.cell_size
         print(f"Cells frbl: {cellInFront} {cellOnRight} {cellInBack} {cellOnLeft}")
 
-        # If the cell in front is unmapped
+        # If the cell on the left is unmapped
         if cellOnLeft == -1: 
-            # If the closest wall in front is less than the safe distance
+            # If the closest wall on the left is less than the safe distance
             if ldist < distToNextCell:
-                # There is a wall in the cell in front
+                # There is a wall in the cell on the left
                 self.grid[self.robot_pos[0]][self.robot_pos[1]+1] = 1
             else:
-                # Otherwise the closest wall in front is far enough away to map some empty cells.
-                # Loop through the distance to the wall in the front and mark each cell as empty
-                for i in range(int(ldist // distToNextCell)):
-                    # Map the cell in front to be empty
-                    self.grid[self.robot_pos[0]][self.robot_pos[1]+1+i] = 0
-                # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
-                if self.grid[self.robot_pos[0]][self.robot_pos[1]+1+int(ldist // distToNextCell)] == -1:
-                    self.grid[self.robot_pos[0]][self.robot_pos[1]+1+int(ldist // distToNextCell)] = 1
+                # Mark cell on the left as empty
+                self.grid[self.robot_pos[0]][self.robot_pos[1]+1] = 0                
+                # # Otherwise the closest wall in front is far enough away to map some empty cells.
+                # # Loop through the distance to the wall in the front and mark each cell as empty
+                # for i in range(int(ldist // distToNextCell)):
+                #     # Map the cell in front to be empty
+                #     self.grid[self.robot_pos[0]][self.robot_pos[1]+1+i] = 0
+                # # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
+                # if self.grid[self.robot_pos[0]][self.robot_pos[1]+1+int(ldist // distToNextCell)] == -1:
+                #     self.grid[self.robot_pos[0]][self.robot_pos[1]+1+int(ldist // distToNextCell)] = 1
         
         
-        # if the cell on the right is unmapped
+        # if the cell in the back is unmapped
         if cellInBack == -1:
             print("Undefined right cell")
             if bdist < distToNextCell:
                 print("MARK AS WALL")
-                # There is a wall in the cell on the right
+                # There is a wall in the cell behind
                 self.grid[self.robot_pos[0]-1][self.robot_pos[1]] = 1
             else:
-                # There is NOT a wall in the cell on the right
-                for i in range(int(bdist // distToNextCell)):
-                    # Map the cells on the right to be empty
-                    self.grid[self.robot_pos[0]-1-i][self.robot_pos[1]] = 0
-                # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
-                # if self.grid[self.robot_pos[0]-1-int(bdist // distToNextCell)][self.robot_pos[1]] == -1:
-                #     self.grid[self.robot_pos[0]-1-int(bdist // distToNextCell)][self.robot_pos[1]] = 1
+                # Mark cell immediately behind as empty
+                self.grid[self.robot_pos[0]-1][self.robot_pos[1]] = 0
+                # # There is NOT a wall in the cell on the right
+                # for i in range(int(bdist // distToNextCell)):
+                #     # Map the cells on the right to be empty
+                #     self.grid[self.robot_pos[0]-1-i][self.robot_pos[1]] = 0
+                # # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
+                # # if self.grid[self.robot_pos[0]-1-int(bdist // distToNextCell)][self.robot_pos[1]] == -1:
+                # #     self.grid[self.robot_pos[0]-1-int(bdist // distToNextCell)][self.robot_pos[1]] = 1
         
-        # if the cell in back is unmapped
+        # if the cell on the right is unmapped
         if cellOnRight == -1:
             if rdist < distToNextCell:
-                # There is a wall in the cell in the back
+                # There is a wall in the cell on the right
                 self.grid[self.robot_pos[0]][self.robot_pos[1]-1] = 1
             else:
-                for i in range(int(rdist // distToNextCell)):
-                    # Map the cells in the back to be empty
-                    self.grid[self.robot_pos[0]][self.robot_pos[1]-1-i] = 0
-                # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
-                if self.grid[self.robot_pos[0]][self.robot_pos[1]-1-int(rdist // distToNextCell)] == -1:
-                    self.grid[self.robot_pos[0]][self.robot_pos[1]-1-int(rdist // distToNextCell)] = 1
+                # Mark cell to the right as empty
+                self.grid[self.robot_pos[0]][self.robot_pos[1]-1] = 0
+                # for i in range(int(rdist // distToNextCell)):
+                #     # Map the cells in the back to be empty
+                #     self.grid[self.robot_pos[0]][self.robot_pos[1]-1-i] = 0
+                # # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
+                # if self.grid[self.robot_pos[0]][self.robot_pos[1]-1-int(rdist // distToNextCell)] == -1:
+                #     self.grid[self.robot_pos[0]][self.robot_pos[1]-1-int(rdist // distToNextCell)] = 1
         
-        # if the cell on the left is unmapped
+        # if the cell in front is unmapped
         if cellInFront == -1:
             if fdist < distToNextCell:
-                # There is a wall in the cell on the left
+                # There is a wall in the cell in front
                 self.grid[self.robot_pos[0]+1][self.robot_pos[1]] = 1
             else:
-                for i in range(int(fdist // distToNextCell)):
-                    # Map the cells on the left to be empty
-                    self.grid[self.robot_pos[0]+1+i][self.robot_pos[1]] = 0
-                # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
-                # if self.grid[self.robot_pos[0]+1+int(fdist // distToNextCell)][self.robot_pos[1]] == -1:
-                #     self.grid[self.robot_pos[0]+1+int(fdist // distToNextCell)][self.robot_pos[1]] = 1
+                # Mark cell in front as empty
+                self.grid[self.robot_pos[0]+1][self.robot_pos[1]] = 0
+                # for i in range(int(fdist // distToNextCell)):
+                #     # Map the cells on the left to be empty
+                #     self.grid[self.robot_pos[0]+1+i][self.robot_pos[1]] = 0
+                # # Finish by mapping the last cell to be a wall (because we looped through all the empty cells already)
+                # # if self.grid[self.robot_pos[0]+1+int(fdist // distToNextCell)][self.robot_pos[1]] == -1:
+                # #     self.grid[self.robot_pos[0]+1+int(fdist // distToNextCell)][self.robot_pos[1]] = 1
         self.print_grid()
 
     
@@ -290,13 +289,13 @@ class mapWalls(Node):
         # This just maps the walls and moves forward repeatedly.
         # It is only here to show how to update the grid after movement. 
         # In the future instead of move_forward it will be following the wall and updating the map every second or so.
-        for i in range(10):
+        for i in range(4):
             self.move_forward()
             self.mapNearestWalls()
 
-        self.turn_right()
-        self.move_forward()
-        self.mapNearestWalls()
+        # self.turn_right()
+        # self.move_forward()
+        # self.mapNearestWalls()
 
 def main(shared_wall_distances):
     rclpy.init()
