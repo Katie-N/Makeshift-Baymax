@@ -74,34 +74,52 @@ class MazeNavigator(Node):
             self.found_goal = True
 
     def control_loop(self):
-        """Main decision-making loop for navigation using right-hand rule."""
-        # Stop the robot if the goal has been found or no LiDAR data yet
         if self.found_goal or self.lidar_data is None:
             self.stop_robot()
             return
 
-        # Extract and filter ranges for front, right, and left sectors
-        # (Assumes LiDAR returns 360 degrees with 0° at front, increasing clockwise)
-        front = min(min(self.lidar_data[0:15] + self.lidar_data[-15:]), 10.0)
-        right = min(self.lidar_data[270:300])
-        left = min(self.lidar_data[60:90])
+        # Extract sectors
+        n = 50
+        section = int(len(self.lidar_data)//4) # divide into sections
+        front = min(min(self.lidar_data[0:10] + self.lidar_data[-10:]), 10.0)
+        # right = min(self.lidar_data[260:280])  # ~270° ±10
+        right = min(self.lidar_data[3*section - n: 3*section + n])
+        # left = min(self.lidar_data[80:100])    # ~90° ±10
+        left = min(self.lidar_data[1*section - n:1*section + n])
 
-        # Create a Twist message to send velocity commands
+        # Threshold for wall detection
+        wall_threshold = 0.15
+
         twist = Twist()
 
-        # Right-hand rule logic:
-        # 1. Prefer turning right if there's space
-        if right > 0.5:
-            twist.angular.z = -0.5  # Turn right (negative is clockwise)
-        # 2. If front is blocked, turn left
-        elif front < 0.5:
-            twist.angular.z = 0.5  # Turn left (counter-clockwise)
-        # 3. Otherwise, move forward
-        else:
-            twist.linear.x = 0.2  # Move forward
+        # Debug printout
+        self.get_logger().info(f"Front: {front:.2f}, Right: {right:.2f}, Left: {left:.2f}")
 
-        # Publish movement command
+
+        twist.angular.z = 0.0
+        twist.linear.x = 0.0
+        # Right-hand rule: priority is RIGHT > FORWARD > LEFT > TURN AROUND
+        if right > wall_threshold:
+            # Path clear to the right
+            self.get_logger().info("Turning RIGHT")
+            twist.angular.z = -0.5
+            # twist.linear.x = 0.1
+        elif front > wall_threshold:
+            # Go straight if front is clear
+            self.get_logger().info("Moving FORWARD")
+            twist.linear.x = 0.2
+        elif left > wall_threshold:
+            # Path only clear to the left
+            self.get_logger().info("Turning LEFT")
+            twist.angular.z = 0.5
+            # twist.linear.x = 0.1
+        else:
+            # Dead-end, rotate in place
+            self.get_logger().info("Dead-end! Rotating to find path.")
+            twist.angular.z = -0.6
+
         self.cmd_pub.publish(twist)
+
 
     def stop_robot(self):
         """Stop the robot by sending zero velocity."""
