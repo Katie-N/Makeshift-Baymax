@@ -11,6 +11,9 @@ class MazeNavigator(Node):
     def __init__(self):
         super().__init__('maze_navigator')
 
+        self.state = "IDLE"
+        self.state_timer = 0  # counts how long we've been in a state
+
         # Subscriber for LiDAR scan data
         self.lidar_sub = self.create_subscription(
             LaserScan,
@@ -78,48 +81,51 @@ class MazeNavigator(Node):
             self.stop_robot()
             return
 
-        # Extract sectors
-        n = 50
-        section = int(len(self.lidar_data)//4) # divide into sections
-        front = min(min(self.lidar_data[0:10] + self.lidar_data[-10:]), 10.0)
-        # right = min(self.lidar_data[260:280])  # ~270° ±10
-        right = min(self.lidar_data[3*section - n: 3*section + n])
-        # left = min(self.lidar_data[80:100])    # ~90° ±10
-        left = min(self.lidar_data[1*section - n:1*section + n])
-
-        # Threshold for wall detection
-        wall_threshold = 0.15
-
         twist = Twist()
 
-        # Debug printout
-        self.get_logger().info(f"Front: {front:.2f}, Right: {right:.2f}, Left: {left:.2f}")
-
-
-        twist.angular.z = 0.0
-        twist.linear.x = 0.0
-        # Right-hand rule: priority is RIGHT > FORWARD > LEFT > TURN AROUND
-        if right > wall_threshold:
-            # Path clear to the right
-            self.get_logger().info("Turning RIGHT")
+        # Handle state transitions
+        if self.state == "TURNING_RIGHT":
             twist.angular.z = -0.5
-            # twist.linear.x = 0.1
-        elif front > wall_threshold:
-            # Go straight if front is clear
-            self.get_logger().info("Moving FORWARD")
+            self.state_timer += 1
+            if self.state_timer >= 10:  # ~1 second turn
+                self.state = "FORWARD_AFTER_TURN"
+                self.state_timer = 0
+
+        elif self.state == "FORWARD_AFTER_TURN":
             twist.linear.x = 0.2
-        elif left > wall_threshold:
-            # Path only clear to the left
-            self.get_logger().info("Turning LEFT")
-            twist.angular.z = 0.5
-            # twist.linear.x = 0.1
-        else:
-            # Dead-end, rotate in place
-            self.get_logger().info("Dead-end! Rotating to find path.")
-            twist.angular.z = -0.6
+            self.state_timer += 1
+            if self.state_timer >= 10:  # move forward ~1 second
+                self.state = "IDLE"
+                self.state_timer = 0
+
+        elif self.state == "IDLE":
+            # Normal decision making
+            n = 50
+            section = int(len(self.lidar_data)//4)
+            front = min(min(self.lidar_data[0:10] + self.lidar_data[-10:]), 10.0)
+            right = min(self.lidar_data[3*section - n: 3*section + n])
+            left = min(self.lidar_data[1*section - n:1*section + n])
+
+            wall_threshold = 0.15
+
+            self.get_logger().info(f"Front: {front:.2f}, Right: {right:.2f}, Left: {left:.2f}")
+
+            if right > wall_threshold:
+                self.get_logger().info("Turning RIGHT")
+                self.state = "TURNING_RIGHT"
+                self.state_timer = 0
+                return  # don't publish here, wait for next loop
+            elif front > wall_threshold:
+                self.get_logger().info("Moving FORWARD")
+                twist.linear.x = 0.2
+            elif left > wall_threshold:
+                self.get_logger().info("Turning LEFT")
+                twist.angular.z = 0.5
+            else:
+                self.get_logger().info("Dead-end! Rotating to find path.")
+                twist.angular.z = -0.6
 
         self.cmd_pub.publish(twist)
-
 
     def stop_robot(self):
         """Stop the robot by sending zero velocity."""
