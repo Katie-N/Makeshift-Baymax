@@ -17,12 +17,13 @@ class ShortestPath:
 
     def visited(self, path):
         for x, y in path[1:-1]:
-            self.maze[y][x] = "*"    
+            self.maze[y][x] = "*"  
+  
 
     def spa(self):
         directions = [
             (-1, 0), (1, 0), (0, -1), (0, 1),     # cardinal
-            (-1, -1), (-1, 1), (1, -1), (1, 1)    # diagonal
+            #(-1, -1), (-1, 1), (1, -1), (1, 1)    # diagonal
         ]
 
         queue = deque([(self.start, [self.start])])
@@ -46,12 +47,74 @@ class ShortestPath:
         with open(self.finalMap, 'w') as f:
             for row in self.maze:
                 f.write(' '.join(str(cell) for cell in row) + '\n')
+
+    def pathToInstructions(self, path, initial_facing="E"):
+        DIRECTIONS = {
+        (1, 0): "E",   # right
+        (0, -1): "N",  # up
+        (-1, 0): "W",  # left
+        (0, 1): "S"    # down
+        }
+
+        ROTATION = {
+            ("N", "N"): "forward",
+            ("N", "E"): "right",
+            ("N", "S"): "backward",
+            ("N", "W"): "left",
+            
+            ("E", "E"): "forward",
+            ("E", "S"): "right",
+            ("E", "W"): "backward",
+            ("E", "N"): "left",
+
+            ("S", "S"): "forward",
+            ("S", "W"): "right",
+            ("S", "N"): "backward",
+            ("S", "E"): "left",
+
+            ("W", "W"): "forward",
+            ("W", "N"): "right",
+            ("W", "E"): "backward",
+            ("W", "S"): "left",
+        }
+
+        if not path or len(path) < 2:
+            return []
+
+        instructions = []
+        current_facing = initial_facing
+
+        i = 1
+        while i < len(path):
+            x0, y0 = path[i - 1]
+            x1, y1 = path[i]
+            dx, dy = x1 - x0, y1 - y0
+
+            new_dir = DIRECTIONS[(dx, dy)]
+            move = ROTATION[(current_facing, new_dir)]
+
+            if move == "forward":
+                instructions.append("forward")
+                i += 1  # move to the next step
+            else:
+                instructions.append(move)
+                current_facing = new_dir
+
+        return instructions
+    
+    def saveInstructions(self, instructions, filename="instructions.txt"):
+        with open(filename, "w") as f:
+            for step in instructions:
+                f.write(step + "\n")
     
     def solve(self):
         path = self.spa()
         if path:
             self.visited(path)
             self.saveMaze()
+            instructions = self.pathToInstructions(path)
+            self.saveInstructions(instructions)
+            print("Instructions:", instructions)
             return path
         else:
             return None
