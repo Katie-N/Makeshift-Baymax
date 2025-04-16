@@ -50,8 +50,8 @@ class ColorTracking(Node):
         # -- Matplotlib Setup for debugging --
         
         # Comment this out for final implementation, as it will be much more performant
-        # plt.ion()  # Enable interactive mode
-        # self.fig, self.ax = plt.subplots()
+        plt.ion()  # Enable interactive mode
+        self.fig, self.ax = plt.subplots()
         # ------------------------------------
 
 
@@ -62,12 +62,12 @@ class ColorTracking(Node):
         # Optional: Add blurring step to remove noise from image
         gaussian = cv2.GaussianBlur(current_frame, (15, 15), 0)
 
-        # # Uncomment to see the masked image for debugging
-        # self.ax.clear()
-        # self.ax.imshow(gaussian)
-        # self.ax.set_title("Real-time Image")
-        # plt.draw()
-        # plt.pause(0.001)  # A brief pause so the figure actually updates
+        # Uncomment to see the masked image for debugging
+        self.ax.clear()
+        self.ax.imshow(gaussian)
+        self.ax.set_title("Real-time Image")
+        plt.draw()
+        plt.pause(0.001)  # A brief pause so the figure actually updates
 
         height, width, channels = gaussian.shape # For color images
         # print(f"{width} x {height}")
@@ -113,7 +113,7 @@ class ColorTracking(Node):
         centroid_x = maxX + maxW/2
         centroid_y = maxY + maxH/2
         # NOTE: comment this out for the actual competition. for debugging only
-        # print(f"Coords of blue center of color: {centroid_x}, {centroid_y}")
+        print(f"Coords of blue center of color: {centroid_x}, {centroid_y}")
 
         # centroid_y = abs(centroid_y - 480) # Invert the y pixel axis. y = 0 now means the bottom of the screen not the top
         return centroid_x, centroid_y
