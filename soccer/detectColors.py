@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from cv_bridge import CvBridge
 
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Point
+from std_msgs.msg import Float32MultiArray
 from sdk.common import val_map
 import time
 
@@ -32,14 +32,14 @@ class ColorTracking(Node):
         # Basic node setup
         super().__init__(name)
         
-        self.enemy_coords_publisher = self.create_publisher(Point, '/ball_position', 10)
-        
+        self.enemy_coords_publisher = self.create_publisher(Float32MultiArray, '/ball_and_goal_position', 10)
+        self.greenOpp = False
+
         self.subscription = self.create_subscription(
             Image,
             'ascamera/camera_publisher/rgb0/image',
             self.listener_callback,
             10)
-
 
         self.bridge = CvBridge()
 
@@ -55,38 +55,51 @@ class ColorTracking(Node):
         # Convert ROS2 Image msg type to OpenCV img
         current_frame = self.bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
 
-        # Optional: Add blurring step to remove noise from image
-        gaussian = cv2.GaussianBlur(current_frame, (15, 15), 0)
+        # # Optional: Add blurring step to remove noise from image
+        # gaussian = cv2.GaussianBlur(current_frame, (15, 15), 0)
 
         # # Uncomment to see the masked image for debugging
-        self.ax.clear()
-        self.ax.imshow(gaussian)
-        self.ax.set_title("Real-time Image")
-        plt.draw()
-        plt.pause(0.001)  # A brief pause so the figure actually updates
+        # self.ax.clear()
+        # self.ax.imshow(current_frame)
+        # self.ax.set_title("Real-time Image")
+        # plt.draw()
+        # plt.pause(0.001)  # A brief pause so the figure actually updates
 
-        height, width, channels = gaussian.shape # For color images
+        height, width, channels = current_frame.shape # For color images
         # print(f"{width} x {height}")
 
         # This extracts the red ball from the robot's field of view
-        lower_bound = np.array([33, 47, 153])  # BGR format
-        upper_bound = np.array([111, 153, 253])  # BGR format
-        red_mask = cv2.inRange(gaussian, lower_bound, upper_bound)
+        # These colors worked for the room but not my house
+        # lower_bound = np.array([53, 46, 155])  # Dark Red
+        # upper_bound = np.array([85, 73, 222])  # Light Red
+        
+        lower_bound = np.array([20, 20, 110])  # Dark Red
+        upper_bound = np.array([85, 73, 222])  # Light Red
+        red_mask = cv2.inRange(current_frame, lower_bound, upper_bound)
 
+        if (self.greenOpp): # For a green opponent goal
+            # This extracts the goal from the robot's field of view
+            lower_bound = np.array([33, 130, 43])  # Dark Green
+            upper_bound = np.array([140, 237, 108])  # Light green
+        else: # The opponent's goal is purple
+            lower_bound = np.array([78, 49, 87])  # Dark Purple
+            upper_bound = np.array([113, 67, 117])  # Light Purple
+        goal_mask = cv2.inRange(current_frame, lower_bound, upper_bound)
+        
         # Get the color's centroid x and y components ( we compute this in a custom function below )
-        centroid_x, centroid_y = self.get_color_centroid( red_mask )
+        ball_centroid_x, ball_centroid_y = self.get_color_centroid(red_mask, "red")
+        goal_centroid_x, goal_centroid_y = self.get_color_centroid(goal_mask, "green")
 
         # publish Point message to attack opponent node to quickly send coords
-        msg = Point()
-        msg.x, msg.y = centroid_x, centroid_y
-        msg.z = 0.0  
+        msg = Float32MultiArray()
+        msg.data = [ball_centroid_x, ball_centroid_y, goal_centroid_x, goal_centroid_y]
 
         self.enemy_coords_publisher.publish(msg)
         # Our camera's resolution is 640x480 
         
     # helper function to determine central point of color
     # these coords represent the middle of the enemy as we see them in the camera
-    def get_color_centroid(self, mask):
+    def get_color_centroid(self, mask, label):
         """
         Return the centroid of the largest contour in the binary image 'mask'
         """
@@ -105,7 +118,7 @@ class ColorTracking(Node):
         centroid_x = maxX + maxW/2
         centroid_y = maxY + maxH/2
         # NOTE: comment this out for the actual competition. for debugging only
-        print(f"Coords of ball center of color: {centroid_x}, {centroid_y}")
+        print(f"Coords of center of {label}: {centroid_x}, {centroid_y}")
 
         # centroid_y = abs(centroid_y - 480) # Invert the y pixel axis. y = 0 now means the bottom of the screen not the top
         return centroid_x, centroid_y

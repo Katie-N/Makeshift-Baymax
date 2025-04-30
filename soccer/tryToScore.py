@@ -28,6 +28,7 @@ class TryToScore(Node):
         # self.attack = False
         # self.defend = False
         self.lastX = 0
+        self.lastGoalX = 0
 
     # function called when the enemy coords are retreived
     # determines whether we should charge at the enemy or not
@@ -67,10 +68,31 @@ class TryToScore(Node):
         else:
             ballInView = True
 
+        # If the goal is in frame, keep track of the last place we saw it. 
+        # This will help us decide whether to turn left or right when we see the ball but not the goal
+        if self.goal_x != 0.0:
+            self.lastGoalX = self.goal_x
+
         if ballInView:
             if self.goal_x == 0.0:
-                # Ball is in view but not the goal ->
-                # rotate around ball
+                # If the ball is close to the bottom of the screen (meaning we are right in front of it)
+                if self.ball_y > 250: # TUNE ME. Less than 250 wasn't working well
+                    # Ball is in view but not the goal -> rotate around ball
+                    rotAngularSpeed = 1.5 # TUNE ME
+                    rotLinearSpeed = 0.4 # TUNE ME
+                    if self.lastGoalX < 320:
+                        print("Rotate left to look for goal")
+                        twist.angular.z = rotAngularSpeed # Kick to the left
+                        twist.linear.x = rotLinearSpeed
+                    else:
+                        twist.angular.z = -rotAngularSpeed # Kick to the right
+                        twist.linear.x = rotLinearSpeed
+                else:
+                    # The ball is too far away to rotate around so let's move forward
+                    print("Moving forward to get closer to the ball")
+                    twist.linear.x = 0.3
+                    twist.angular.z = 0.0
+                self.lastX = self.ball_x
 
             elif 200 <= self.ball_x <= 450:
                 # print("Moving forward")
@@ -87,18 +109,27 @@ class TryToScore(Node):
             elif self.ball_x > 450:
                 # print("Turn right")
                 twist.angular.z = -angularSpeed  # Small right turn
-                twist.linear.x = linearSpeed    # Move forward   
+                twist.linear.x = linearSpeed    # Move forward
                 self.lastX = self.ball_x
 
         # Publish movement command
         self.cmd_vel_pub.publish(twist)
+        
+    def stop_robot(self):
+        """Stop the robot by sending zero velocity."""
+        twist = Twist()  # Zero velocities
+        self.cmd_pub.publish(twist)
 
 
 def main():
     charge = TryToScore('tryToScoreNode')
-    rclpy.spin(charge)
-    charge.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(charge)
+    except KeyboardInterrupt:
+        charge.stop_robot()
+    finally:
+        charge.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     rclpy.init()
